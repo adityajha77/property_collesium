@@ -1,0 +1,217 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Syne:wght@400..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --font-sans: "Syne", sans-serif;
+    --font-mono: "Space Grotesk", monospace;
+
+    /* Light theme - Clean and modern */
+    --background: 0 0% 98%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --card-glass: 0 0% 96%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 262.1 83.3% 67.8%;
+
+    --secondary: 220 13% 91%;
+    --secondary-foreground: 240 10% 3.9%;
+    --secondary-glow: 220 13% 81%;
+
+    --muted: 220 13% 91%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 34.9 98.6% 58.4%;
+    --accent-foreground: 240 10% 3.9%;
+    --accent-glow: 34.9 98.6% 68.4%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 85%;
+    --input: 220 13% 85%;
+    --ring: 262.1 83.3% 57.8%;
+
+    --radius: 0.75rem;
+
+    /* Custom gradients for light mode */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-glow)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    --gradient-rainbow: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--secondary)));
+    --gradient-background: radial-gradient(ellipse at top, hsl(262.1 83.3% 90% / 0.3), transparent 50%),
+                           radial-gradient(ellipse at bottom left, hsl(220 13% 95% / 0.2), transparent 50%),
+                           radial-gradient(ellipse at bottom right, hsl(34.9 98.6% 95% / 0.2), transparent 50%);
+
+    /* Glass effects for light mode */
+    --glass-bg: hsl(var(--card-glass) / 0.5);
+    --glass-border: hsl(var(--border) / 0.5);
+    --glass-shadow: 0 8px 32px 0 hsl(var(--primary) / 0.1);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    /* Dark theme - Inspired by Codedex and Tensor */
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+    
+    --card: 224 71% 8%;
+    --card-foreground: 210 40% 98%;
+    --card-glass: 224 71% 12%;
+
+    --popover: 224 71% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 173 97% 50%;
+    --primary-foreground: 224 71% 4%;
+    --primary-glow: 173 97% 60%;
+
+    --secondary: 280 100% 60%;
+    --secondary-foreground: 210 40% 98%;
+    --secondary-glow: 280 100% 70%;
+
+    --muted: 224 71% 12%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 330 100% 50%;
+    --accent-foreground: 210 40% 98%;
+    --accent-glow: 330 100% 60%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 224 71% 18%;
+    --input: 224 71% 12%;
+    --ring: 173 97% 50%;
+
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-glow)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    --gradient-rainbow: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)));
+    --gradient-background: radial-gradient(ellipse at top, hsl(173 97% 20% / 0.3), transparent 50%), 
+                           radial-gradient(ellipse at bottom left, hsl(280 100% 30% / 0.2), transparent 50%),
+                           radial-gradient(ellipse at bottom right, hsl(330 100% 30% / 0.2), transparent 50%);
+
+    /* Glass effects */
+    --glass-bg: hsl(var(--card-glass) / 0.1);
+    --glass-border: hsl(var(--border) / 0.2);
+    --glass-shadow: 0 8px 32px 0 hsl(var(--primary) / 0.1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground overflow-x-hidden font-sans;
+    background-image: var(--gradient-background);
+    background-attachment: fixed;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Glassmorphism card */
+  .glass-card {
+    @apply backdrop-blur-xl bg-glass-bg border border-glass-border rounded-2xl;
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Neon glow effects */
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3);
+  }
+
+  .glow-secondary {
+    box-shadow: 0 0 20px hsl(var(--secondary) / 0.5), 0 0 40px hsl(var(--secondary) / 0.3);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.5), 0 0 40px hsl(var(--accent) / 0.3);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: var(--gradient-primary);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .gradient-text-rainbow {
+    background: var(--gradient-rainbow);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Animated background */
+  .parallax-bg {
+    background: var(--gradient-background);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+  }
+
+  /* Cursor glow effect */
+  .cursor-glow {
+    transition: var(--transition-smooth);
+  }
+
+  .cursor-glow:hover {
+    filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.3));
+  }
+
+  /* Enhanced hover animations */
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+  }
+
+  .hover-glow:hover {
+    @apply glow-primary;
+  }
+
+  /* Progress bar gradient */
+  .progress-gradient {
+    background: var(--gradient-primary);
+  }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.wallet-adapter-button {
+  @apply bg-gradient-primary text-primary-foreground shadow-lg transition-all duration-300 ease-in-out;
+  @apply hover:shadow-primary/50 hover:scale-105;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary;
+  @apply px-6 py-3 text-base font-semibold rounded-xl;
+}
