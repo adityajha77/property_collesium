@@ -1,31 +1,22 @@
 const fs = require('fs');
-const path = require('path');
-
-let ipfs; // Declare ipfs client globally but initialize asynchronously
-
-// Asynchronously initialize IPFS client
-const initializeIpfs = async () => {
-    if (!ipfs) {
-        const { create } = await import('ipfs-http-client');
-        ipfs = create({
-            host: 'api.pinata.cloud',
-            port: 443,
-            protocol: 'https',
-            headers: {
-                pinata_api_key: process.env.PINATA_API_KEY,
-                pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY
-            }
-        });
-    }
-    return ipfs;
-};
+const axios = require('axios');
+const FormData = require('form-data');
 
 const uploadFileToIPFS = async (filePath) => {
     try {
-        await initializeIpfs(); // Ensure IPFS client is initialized
-        const file = fs.readFileSync(filePath);
-        const result = await ipfs.add(file);
-        return `https://gateway.pinata.cloud/ipfs/${result.cid.toString()}`;
+        const file = fs.createReadStream(filePath);
+        const data = new FormData();
+        data.append('file', file);
+
+        const res = await axios.post("https://api.pinata.cloud/pinning/pinFileToIPFS", data, {
+            maxBodyLength: "Infinity",
+            headers: {
+                'Content-Type': `multipart/form-data; boundary=${data._boundary}`,
+                'pinata_api_key': process.env.PINATA_API_KEY,
+                'pinata_secret_api_key': process.env.PINATA_SECRET_API_KEY
+            }
+        });
+        return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
     } catch (error) {
         console.error('Error uploading file to IPFS:', error);
         throw error;
@@ -34,9 +25,13 @@ const uploadFileToIPFS = async (filePath) => {
 
 const uploadJSONToIPFS = async (jsonContent) => {
     try {
-        await initializeIpfs(); // Ensure IPFS client is initialized
-        const result = await ipfs.add(JSON.stringify(jsonContent));
-        return `https://gateway.pinata.cloud/ipfs/${result.cid.toString()}`;
+        const res = await axios.post("https://api.pinata.cloud/pinning/pinJSONToIPFS", jsonContent, {
+            headers: {
+                'pinata_api_key': process.env.PINATA_API_KEY,
+                'pinata_secret_api_key': process.env.PINATA_SECRET_API_KEY
+            }
+        });
+        return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
     } catch (error) {
         console.error('Error uploading JSON to IPFS:', error);
         throw error;

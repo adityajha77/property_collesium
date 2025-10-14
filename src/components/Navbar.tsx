@@ -16,6 +16,7 @@ const Navbar = () => {
     { name: "Swap", href: "/swap" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Create", href: "/create" },
+    { name: "Transactions", href: "/transactions" },
   ];
 
   return (

@@ -21,7 +21,7 @@ let backendWallet;
 let backendSigner;
 
 const initializeSolana = (solanaRpcUrl, backendWalletSecretKey) => {
-    connection = new Connection(solanaRpcUrl, 'confirmed');
+    connection = new Connection(solanaRpcUrl, 'finalized');
 
     const secretKey = Uint8Array.from(JSON.parse(backendWalletSecretKey));
     backendWallet = Keypair.fromSecretKey(secretKey);
@@ -41,6 +41,7 @@ const initializeSolana = (solanaRpcUrl, backendWalletSecretKey) => {
     });
 
     console.log("✅ Solana initialized with backend wallet:", backendWallet.publicKey.toBase58());
+    return backendWallet.publicKey; // Return the public key
 };
 
 // Create property token (fungible SPL token with metadata)
@@ -116,6 +117,9 @@ const transferTokens = async (mintAddress, senderKeypair, recipientPublicKey, am
         const mintPublicKey = new PublicKey(mintAddress);
         const recipientPubkey = new PublicKey(recipientPublicKey);
 
+        console.log(`Attempting to transfer ${amount} tokens of mint ${mintAddress}`);
+        console.log(`Sender: ${senderKeypair.publicKey.toBase58()}, Recipient: ${recipientPubkey.toBase58()}`);
+
         const senderTokenAccount = await getOrCreateAssociatedTokenAccount(
             connection,
             senderKeypair,
@@ -139,10 +143,20 @@ const transferTokens = async (mintAddress, senderKeypair, recipientPublicKey, am
             amount
         );
 
-        console.log(`✅ Transferred ${amount} tokens: ${signature}`);
+        // Wait for the transaction to be finalized
+        await connection.confirmTransaction(signature, 'finalized');
+
+        console.log(`✅ Transferred ${amount} tokens and confirmed: ${signature}`);
         return signature;
     } catch (error) {
         console.error("❌ Error transferring tokens:", error);
+        // Log more details about the error
+        if (error.logs) {
+            console.error("Solana transaction logs:", error.logs);
+        }
+        if (error.message) {
+            console.error("Error message:", error.message);
+        }
         throw error;
     }
 };
@@ -164,9 +178,27 @@ const verifyTransaction = async (signature) => {
     }
 };
 
+const getConnection = () => {
+    if (!connection) {
+        console.error("Solana connection not initialized. Call initializeSolana first.");
+        throw new Error("Solana connection not initialized.");
+    }
+    return connection;
+};
+
+const getBackendWallet = () => {
+    if (!backendWallet) {
+        console.error("Backend wallet not initialized. Call initializeSolana first.");
+        throw new Error("Backend wallet not initialized.");
+    }
+    return backendWallet;
+};
+
 module.exports = {
     initializeSolana,
     createPropertyToken,
     transferTokens,
-    verifyTransaction
+    verifyTransaction,
+    getBackendWallet, // Export a getter for the backend wallet
+    getConnection // Export a getter for the connection object
 };

@@ -5,19 +5,23 @@ const fs = require('fs'); // Import fs for file system operations
 const Property = require('../models/Property');
 const Transaction = require('../models/Transaction'); // Import Transaction model
 const { uploadFileToIPFS } = require('../utils/ipfs');
-const { createPropertyToken, transferTokens, verifyTransaction } = require('../utils/solana'); // Import transferTokens and verifyTransaction
-const { Keypair, PublicKey } = require('@solana/web3.js'); // Import Keypair and PublicKey
+const { PublicKey, Connection, SystemProgram } = require('@solana/web3.js'); // Import PublicKey, Connection, and SystemProgram
 
-// Set up multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/'); // Files will be temporarily stored in the 'uploads' directory
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
-const upload = multer({ storage: storage });
+// This module will now export a function that takes solanaUtils as an argument
+module.exports = (solanaUtils) => {
+    // Destructure functions, but access backendWallet and connection via getters/properties later
+    const { createPropertyToken, transferTokens, verifyTransaction, getBackendWallet, getConnection } = solanaUtils;
+
+    // Set up multer for file uploads
+    const storage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            cb(null, 'uploads/'); // Files will be temporarily stored in the 'uploads' directory
+        },
+        filename: function (req, file, cb) {
+            cb(null, Date.now() + '-' + file.originalname);
+        }
+    });
+    const upload = multer({ storage: storage });
 
 // @route   POST /api/properties
 // @desc    Create a new property and save to DB, handle image uploads to IPFS
@@ -135,76 +139,108 @@ router.get('/:id', async (req, res) => {
 });
 
 
-// @route   POST /api/buy/:id
+// @route   POST /api/properties/:id/buy
 // @desc    User buys tokens for a property
 // @access  Public (for now, will add authentication later)
-router.post('/buy/:id', async (req, res) => {
+router.post('/:id/buy', async (req, res) => {
     try {
-        const { buyerWalletAddress, tokenAmount, txSignature } = req.body;
+        const { buyerPublicKey, tokensToBuy, solanaTxSignature } = req.body;
 
         const property = await Property.findOne({ propertyId: req.params.id });
 
         if (!property) {
-            return res.status(404).json({ msg: 'Property not found' });
+            return res.status(404).json({ message: 'Property not found' });
         }
 
         if (property.status !== 'tokenized') {
-            return res.status(400).json({ msg: 'Property is not tokenized or available for sale' });
+            return res.status(400).json({ message: 'Property is not tokenized or available for sale' });
         }
 
         if (!property.tokenMintAddress) {
-            return res.status(400).json({ msg: 'Property token mint address not found' });
+            return res.status(400).json({ message: 'Property token mint address not found' });
         }
 
-        if (tokenAmount <= 0) {
-            return res.status(400).json({ msg: 'Token amount must be greater than 0' });
+        if (tokensToBuy <= 0) {
+            return res.status(400).json({ message: 'Token amount must be greater than 0' });
         }
 
-        if (!txSignature) {
-            return res.status(400).json({ msg: 'Transaction signature is required for payment confirmation' });
+        if (!solanaTxSignature) {
+            return res.status(400).json({ message: 'SOL payment transaction signature is required.' });
         }
 
-        // Verify the transaction signature on the Solana blockchain
-        const isTxVerified = await verifyTransaction(txSignature);
-        if (!isTxVerified) {
-            return res.status(400).json({ msg: 'Invalid or unconfirmed transaction signature' });
+        // Verify the SOL payment transaction on the Solana blockchain
+        const isSolPaymentVerified = await verifyTransaction(solanaTxSignature);
+        if (!isSolPaymentVerified) {
+            return res.status(400).json({ message: 'Invalid or unconfirmed SOL payment transaction signature.' });
         }
 
-        // Load backend wallet (which holds the initial minted tokens for the property)
-        const backendWalletSecretKey = process.env.BACKEND_WALLET_SECRET_KEY;
-        if (!backendWalletSecretKey) {
-            throw new Error("BACKEND_WALLET_SECRET_KEY is not set in .env");
-        }
-        const backendWallet = Keypair.fromSecretKey(
-            Uint8Array.from(JSON.parse(backendWalletSecretKey))
-        );
+        // Calculate the SOL amount expected for the tokens
+        const tokenPricePerSOL = property.priceSOL / property.totalTokens;
+        const expectedSOLAmount = tokensToBuy * tokenPricePerSOL;
+        const expectedLamports = Math.round(expectedSOLAmount * 1_000_000_000);
 
-        // Transfer tokens from backend wallet (acting as property owner) to buyer
+        // Verify the actual SOL amount transferred in solanaTxSignature
+        // Need to get the connection object from solana.js
+        const connection = solanaUtils.getConnection(); // Access via getter
+        const transactionDetails = await connection.getParsedTransaction(solanaTxSignature, { commitment: 'finalized' });
+
+        if (!transactionDetails) {
+            return res.status(400).json({ message: 'Could not retrieve details for SOL payment transaction.' });
+        }
+
+        let actualTransferredLamports = 0;
+        const backendWallet = getBackendWallet(); // Get the initialized backend wallet
+        console.log("backendWallet (from getter):", backendWallet); // Debugging log
+        const backendWalletAddress = backendWallet.publicKey.toBase58(); // Access publicKey from the retrieved wallet
+
+        // Iterate through instructions to find the SystemProgram.transfer
+        for (const instruction of transactionDetails.transaction.message.instructions) {
+            if (instruction.programId.toBase58() === SystemProgram.programId.toBase58() && instruction.parsed?.type === 'transfer') {
+                const { info } = instruction.parsed;
+                if (info.source === buyerPublicKey && info.destination === backendWalletAddress) {
+                    actualTransferredLamports = info.lamports;
+                    break;
+                }
+            }
+        }
+
+        if (actualTransferredLamports < expectedLamports) {
+            return res.status(400).json({ message: `Insufficient SOL payment. Expected at least ${expectedSOLAmount} SOL, but received ${actualTransferredLamports / 1_000_000_000} SOL.` });
+        }
+
+        // Transfer property tokens from backend wallet to buyer
         const transferTxSignature = await transferTokens(
             property.tokenMintAddress,
-            backendWallet, // Sender is the backend wallet (initial minter/owner)
-            buyerWalletAddress, // Recipient is the buyer
-            tokenAmount
+            getBackendWallet(), // Sender is the backend wallet (initial minter/owner)
+            new PublicKey(buyerPublicKey), // Recipient is the buyer
+            tokensToBuy
         );
 
         // Record the transaction
         const newTransaction = new Transaction({
             propertyId: property.propertyId,
             tokenMintAddress: property.tokenMintAddress,
-            buyer: buyerWalletAddress,
-            seller: backendWallet.publicKey.toBase58(), // Backend wallet is the seller for initial sale
-            tokenAmount: tokenAmount,
-            priceSOL: property.priceSOL * tokenAmount / property.totalTokens, // Calculate price based on fractional ownership
-            txSignature: transferTxSignature,
-            transactionType: 'buy'
+            buyer: buyerPublicKey,
+            seller: getBackendWallet().publicKey.toBase58(), // Backend wallet is the seller for initial sale
+            tokenAmount: tokensToBuy,
+            priceSOL: expectedSOLAmount, // Record the actual SOL price for this transaction
+            solanaTxSignature: solanaTxSignature, // Store the SOL payment transaction signature
+            propertyTokenTxSignature: transferTxSignature, // Store the property token transfer signature
+            txSignature: solanaTxSignature, // Use the SOL payment signature as the primary transaction signature
+            transactionType: 'buy',
+            status: 'success' // Assuming success if we reach here
         });
 
         await newTransaction.save();
 
-        res.json({ msg: `Successfully bought ${tokenAmount} tokens for property ${property.title}`, transaction: newTransaction });
+        res.status(200).json({
+            message: `Successfully bought ${tokensToBuy} tokens for property ${property.title}`,
+            transactionId: newTransaction._id,
+            propertyTokenTxSignature: transferTxSignature
+        });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        console.error("Error in buy tokens route:", err.message);
+        res.status(500).json({ message: 'Server Error during token purchase', error: err.message });
     }
 });
 
@@ -265,4 +301,18 @@ router.post('/sell/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+// @route   GET /api/transactions/buyer/:buyerPublicKey
+// @desc    Get all transactions for a specific buyer
+// @access  Public (will add authentication later)
+router.get('/transactions/buyer/:buyerPublicKey', async (req, res) => {
+    try {
+        const transactions = await Transaction.find({ buyer: req.params.buyerPublicKey }).sort({ createdAt: -1 });
+        res.json(transactions);
+    } catch (err) {
+        console.error("Error fetching buyer transactions:", err.message);
+        res.status(500).json({ message: 'Server Error fetching transactions', error: err.message });
+    }
+});
+
+    return router;
+};

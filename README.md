@@ -1,55 +1,55 @@
-# Welcome to my project
+# Property Coliseum - Real Estate Tokenization Platform
 
+This is a full-stack application for tokenizing real estate properties on the Solana blockchain.
 
-## How can I edit this code?
+## Project Setup
 
-There are several ways of editing your application.
+### Prerequisites
 
+- Node.js (v18 or later)
+- A Solana wallet that supports the Devnet (e.g., Phantom, Solflare). **MetaMask is not compatible.**
 
-Changes made via Lovable will be committed automatically to this repo.
+### Wallet Setup (Crucial Step)
 
+1.  **Install a Solana Wallet:** We recommend using the [Phantom wallet](https://phantom.app/) browser extension.
+2.  **Switch to Devnet:** Open your Phantom wallet and switch the network from "Mainnet Beta" to "Devnet". You can do this in `Settings > Developer Settings > Active Network`.
+3.  **Get Free Devnet SOL:** You will need Devnet SOL to pay for transaction fees. You can get some for free by using a Solana faucet. You can find one inside the Phantom wallet or by searching for a "Solana Devnet Faucet" online.
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/adityajha77/property_collesium
+    cd property_collesium
+    ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2.  **Install frontend dependencies:**
+    ```bash
+    npm install
+    ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+3.  **Install backend dependencies:**
+    ```bash
+    cd backend
+    npm install
+    cd ..
+    ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+4.  **Set up environment variables:**
+    - Create a `.env` file in the `backend` directory.
+    - Add your backend wallet's secret key and your IPFS credentials. See `backend/.env.example` for the required format.
 
-**Edit a file directly in GitHub**
+### Running the Application
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1.  **Start the backend server:**
+    ```bash
+    cd backend
+    npm start
+    ```
 
-**Use GitHub Codespaces**
+2.  **Start the frontend development server:**
+    ```bash
+    npm run dev
+    ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+The application should now be running on `http://localhost:8080`.

@@ -3,7 +3,8 @@ require('dotenv').config({ path: path.resolve(__dirname, '../backend/.env') });
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const { initializeSolana } = require('./utils/solana');
+const solanaUtils = require('./utils/solana'); // Import all exports as solanaUtils
+// Do not destructure initializeSolana and backendWallet here yet
 
 // Debugging: Log all loaded environment variables
 console.log('Loaded Environment Variables:');
@@ -26,13 +27,18 @@ if (!backendWalletSecretKey) {
     process.exit(1);
 }
 
-initializeSolana(solanaRpcUrl, backendWalletSecretKey);
+const backendWalletPublicKey = solanaUtils.initializeSolana(solanaRpcUrl, backendWalletSecretKey); // Call initializeSolana via solanaUtils
+console.log("Backend Wallet Public Key for Frontend:", backendWalletPublicKey.toBase58()); // Log for frontend use
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow all methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
+}));
 app.use(express.json());
 
 // Database Connection
@@ -40,8 +46,29 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connected successfully'))
     .catch(err => console.error('MongoDB connection error:', err));
 
+// Import PublicKey for the new route
+const { PublicKey } = require('@solana/web3.js');
+
 // Routes
-app.use('/api/properties', require('./routes/propertyRoutes'));
+// @route   GET /api/properties/backend-wallet-public-key
+// @desc    Get the backend wallet's public key
+// @access  Public
+app.get('/api/properties/backend-wallet-public-key', (req, res) => {
+    try {
+        console.log("Attempting to fetch backend wallet public key (from index.js)...");
+        if (!backendWalletPublicKey) { // Use the already initialized public key
+            console.error("Backend wallet public key not available in index.js when endpoint was called.");
+            return res.status(500).json({ message: 'Backend wallet not initialized.' });
+        }
+        console.log("Backend wallet public key found (from index.js):", backendWalletPublicKey.toBase58());
+        res.status(200).json({ publicKey: backendWalletPublicKey.toBase58() });
+    } catch (err) {
+        console.error("Error fetching backend wallet public key (from index.js):", err.message);
+        res.status(500).json({ message: 'Server Error fetching backend wallet public key', error: err.message });
+    }
+});
+
+app.use('/api/properties', require('./routes/propertyRoutes')(solanaUtils)); // Pass solanaUtils to the router
 app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Basic route

@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Plus, BarChart3, PieChart, DollarSign, Wallet } from "lucide-react";
+import { TrendingUp, TrendingDown, Plus, BarChart3, PieChart, DollarSign, Wallet, Landmark, PiggyBank } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
-import PropertyGrid from "@/components/PropertyGrid"; // Import PropertyGrid
+import PropertyGrid from "@/components/PropertyGrid";
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'; // Import useConnection and useWallet
+import { LAMPORTS_PER_SOL } from '@solana/web3.js'; // Import LAMPORTS_PER_SOL
 
 // Interface matching the backend Property model
 interface Property {
@@ -24,15 +26,36 @@ interface Property {
   createdAt: string;
 }
 
+// Interface for enriched transaction data, tailored for portfolio display
+interface EnrichedTransaction {
+  type: 'Buy' | 'Sell';
+  amount: string;
+  property: string;
+  value: string;
+  time: string;
+}
+
+// Interface for raw transaction data from the backend
+interface RawTransaction {
+  propertyId: string;
+  transactionType: 'buy' | 'sell';
+  tokenAmount: number;
+  priceSOL: number;
+  createdAt: string;
+}
+
 const Portfolio = () => {
   const navigate = useNavigate();
+  const { connection } = useConnection(); // Get Solana connection
+  const { publicKey } = useWallet(); // Get connected wallet's public key
   const [userProperties, setUserProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availableTokenBalance, setAvailableTokenBalance] = useState<number>(0);
+  const [rentalIncome, setRentalIncome] = useState<{ monthly: number; total: number }>({ monthly: 0, total: 0 });
 
-  // Placeholder for the connected user's wallet address
-  // In a real app, this would come from a wallet connection context
-  const currentUserWalletAddress = "YOUR_WALLET_ADDRESS_HERE"; // Replace with actual wallet address
+  // Use the connected wallet's public key, or a placeholder if not connected
+  const currentUserWalletAddress = publicKey ? publicKey.toBase58() : "YOUR_WALLET_ADDRESS_HERE";
 
   useEffect(() => {
     const fetchUserProperties = async () => {
@@ -64,21 +87,75 @@ const Portfolio = () => {
     (acc, property) => {
       // Only consider tokenized properties for total value and ROI calculation
       if (property.status === 'tokenized') {
-        acc.totalValue += property.priceSOL; // Assuming priceSOL is the total value of the property
-        acc.totalInvested += property.priceSOL; // Placeholder, needs actual investment tracking
+        acc.totalPortfolioValue += property.priceSOL; // Sum of all property tokens owned * current token price (placeholder for now)
+        acc.totalPropertiesOwned += 1; // Count unique property tokens
+        // For ROI, we'd need to track individual token purchase prices and current market prices
+        // For now, using a placeholder for ROI calculation
+        acc.totalROI = 5.25; // Placeholder percentage gain or loss
       }
       return acc;
     },
     {
-      totalValue: 0,
-      totalInvested: 0,
-      totalROI: 0, // This would need more complex calculation based on buy/sell prices
-      properties: userProperties.length,
+      totalPortfolioValue: 0,
+      totalPropertiesOwned: 0,
+      totalROI: 0,
     }
   );
 
-  // Placeholder for recent transactions
-  const recentTransactions = [];
+  // Fetch available token balance (SOL balance)
+  useEffect(() => {
+    const fetchSolBalance = async () => {
+      if (publicKey) {
+        try {
+          const balance = await connection.getBalance(publicKey);
+          setAvailableTokenBalance(balance / LAMPORTS_PER_SOL);
+        } catch (err) {
+          console.error("Failed to fetch SOL balance:", err);
+          // Optionally set an error state for balance fetching
+        }
+      } else {
+        setAvailableTokenBalance(0); // Reset if wallet is disconnected
+      }
+    };
+
+    fetchSolBalance();
+    // For now, using mock data for rental income
+    setRentalIncome({ monthly: 25.50, total: 1200.00 });
+  }, [publicKey, connection]); // Depend on publicKey and connection
+
+  // State for recent transactions
+  const [recentTransactions, setRecentTransactions] = useState<EnrichedTransaction[]>([]);
+
+  // Fetch recent transactions
+  useEffect(() => {
+    const fetchRecentTransactions = async () => {
+      if (publicKey) {
+        try {
+          const response = await fetch(`http://localhost:5000/api/properties/transactions/buyer/${publicKey.toBase58()}`);
+          if (response.ok) {
+            const data = await response.json();
+            // Enrich transactions with property titles (optional, for better display)
+            const enriched: EnrichedTransaction[] = await Promise.all(data.slice(0, 5).map(async (tx: RawTransaction) => {
+              const propResponse = await fetch(`http://localhost:5000/api/properties/${tx.propertyId}`);
+              const propData = propResponse.ok ? await propResponse.json() : { title: `Property ${tx.propertyId}` };
+              return {
+                type: tx.transactionType === 'buy' ? 'Buy' : 'Sell',
+                amount: `${tx.tokenAmount} tokens`,
+                property: propData.title,
+                value: tx.priceSOL.toFixed(2),
+                time: new Date(tx.createdAt).toLocaleDateString(),
+              };
+            }));
+            setRecentTransactions(enriched);
+          }
+        } catch (err) {
+          console.error("Failed to fetch recent transactions:", err);
+        }
+      }
+    };
+
+    fetchRecentTransactions();
+  }, [publicKey]);
 
   if (loading) {
     return (
@@ -139,36 +216,49 @@ const Portfolio = () => {
           transition={{ delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"
         >
+          {/* Total Portfolio Value */}
           <Card className="glass-card p-6 text-center">
             <DollarSign className="w-8 h-8 mx-auto mb-3 text-primary" />
             <div className="text-2xl font-bold text-secondary mb-1">
-              {portfolioStats.totalValue.toFixed(2)} SOL
+              {portfolioStats.totalPortfolioValue.toFixed(2)} SOL
             </div>
-            <div className="text-sm text-muted-foreground">Total Value</div>
+            <div className="text-sm text-muted-foreground">Total Portfolio Value</div>
           </Card>
 
+          {/* Total Properties Owned */}
           <Card className="glass-card p-6 text-center">
-            <TrendingUp className="w-8 h-8 mx-auto mb-3 text-accent" />
+            <Landmark className="w-8 h-8 mx-auto mb-3 text-accent" />
             <div className="text-2xl font-bold text-accent mb-1">
+              {portfolioStats.totalPropertiesOwned}
+            </div>
+            <div className="text-sm text-muted-foreground">Total Properties Owned</div>
+          </Card>
+
+          {/* Total ROI / Growth % */}
+          <Card className="glass-card p-6 text-center">
+            <TrendingUp className="w-8 h-8 mx-auto mb-3 text-secondary" />
+            <div className="text-2xl font-bold mb-1">
               +{portfolioStats.totalROI.toFixed(2)}%
             </div>
-            <div className="text-sm text-muted-foreground">Total ROI</div>
+            <div className="text-sm text-muted-foreground">Total ROI / Growth %</div>
           </Card>
 
+          {/* Available Token Balance / Wallet Balance */}
           <Card className="glass-card p-6 text-center">
-            <BarChart3 className="w-8 h-8 mx-auto mb-3 text-secondary" />
-            <div className="text-2xl font-bold mb-1">
-              {portfolioStats.properties}
-            </div>
-            <div className="text-sm text-muted-foreground">Properties</div>
-          </Card>
-
-          <Card className="glass-card p-6 text-center">
-            <PieChart className="w-8 h-8 mx-auto mb-3 text-primary" />
+            <Wallet className="w-8 h-8 mx-auto mb-3 text-primary" />
             <div className="text-2xl font-bold text-secondary mb-1">
-              +{(portfolioStats.totalValue - portfolioStats.totalInvested).toFixed(2)} SOL
+              {availableTokenBalance.toFixed(2)} SOL
             </div>
-            <div className="text-sm text-muted-foreground">Profit/Loss</div>
+            <div className="text-sm text-muted-foreground">Available Token Balance</div>
+          </Card>
+
+          {/* Rental Income Earned (Monthly / Total) */}
+          <Card className="glass-card p-6 text-center">
+            <PiggyBank className="w-8 h-8 mx-auto mb-3 text-accent" />
+            <div className="text-2xl font-bold text-accent mb-1">
+              {rentalIncome.monthly.toFixed(2)} SOL <span className="text-base text-muted-foreground">/ {rentalIncome.total.toFixed(2)} SOL</span>
+            </div>
+            <div className="text-sm text-muted-foreground">Rental Income (Monthly / Total)</div>
           </Card>
         </motion.div>
 

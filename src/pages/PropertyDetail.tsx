@@ -7,6 +7,10 @@ import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input"; // Import Input component
+import { useToast } from "@/components/ui/use-toast"; // Import useToast hook
+import { useWallet, useConnection } from "@solana/wallet-adapter-react"; // Import useWallet and useConnection hooks
+import { Connection, PublicKey, Transaction, SystemProgram } from "@solana/web3.js"; // Import Solana web3 components
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -14,16 +18,32 @@ const PropertyDetail = () => {
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tokensToBuy, setTokensToBuy] = useState(1); // State for tokens to buy
+  const [isBuying, setIsBuying] = useState(false); // State for loading during purchase
+  const [backendWalletPublicKey, setBackendWalletPublicKey] = useState(null); // State for backend wallet public key
+  const { toast } = useToast(); // Initialize toast
+  const { publicKey, sendTransaction, connected } = useWallet(); // Solana wallet hook
+  const { connection } = useConnection(); // Use the connection from the WalletProvider
 
   useEffect(() => {
-    const fetchProperty = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`/api/properties/${id}`);
-        if (!res.ok) {
+        // Fetch backend wallet public key first (direct call to backend port 5000)
+        const backendWalletRes = await fetch('http://localhost:5000/api/properties/backend-wallet-public-key');
+        if (!backendWalletRes.ok) {
+          throw new Error('Failed to fetch backend wallet public key');
+        }
+        const backendWalletData = await backendWalletRes.json();
+        setBackendWalletPublicKey(new PublicKey(backendWalletData.publicKey));
+
+        // Then fetch property details (direct call to backend port 5000)
+        const propertyRes = await fetch(`http://localhost:5000/api/properties/${id}`);
+        if (!propertyRes.ok) {
           throw new Error('Property not found');
         }
-        const data = await res.json();
-        setProperty(data);
+        const propertyData = await propertyRes.json();
+        setProperty(propertyData);
+
       } catch (err) {
         setError(err.message);
       } finally {
@@ -31,7 +51,7 @@ const PropertyDetail = () => {
       }
     };
 
-    fetchProperty();
+    fetchData();
   }, [id]);
 
   if (loading) {
@@ -104,6 +124,113 @@ const PropertyDetail = () => {
       </div>
     );
   }
+
+  const handleBuyTokens = async () => {
+    if (!publicKey || !connected) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your Solana wallet to buy tokens.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!property || !property.tokenMintAddress) {
+      toast({
+        title: "Error",
+        description: "Property or token information is missing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!backendWalletPublicKey) {
+      toast({
+        title: "Error",
+        description: "Backend wallet public key not loaded. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsBuying(true);
+    try {
+      const tokenPrice = property.priceSOL / property.totalTokens;
+      const totalSOLCost = tokensToBuy * tokenPrice;
+      const lamports = Math.round(totalSOLCost * 1_000_000_000); // Ensure lamports is an integer
+
+      // Get the latest blockhash first
+      const { blockhash } = await connection.getLatestBlockhash({ commitment: 'finalized' });
+
+      // 1. Create the transaction with the blockhash and fee payer
+      const transaction = new Transaction({
+        feePayer: publicKey,
+        recentBlockhash: blockhash,
+      }).add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: backendWalletPublicKey, // Use the dynamically fetched public key
+          lamports: lamports, // Use the rounded value
+        })
+      );
+
+      // 2. Send the transaction for the user to approve
+      console.log("Sending transaction...");
+      const signature = await sendTransaction(transaction, connection);
+      console.log("Transaction sent, signature:", signature);
+
+      toast({
+        title: "SOL Payment Sent",
+        description: `Transaction signature: ${signature}. Waiting for confirmation...`,
+      });
+
+      // Wait for the transaction to be finalized on the frontend as well
+      await connection.confirmTransaction(signature, "finalized");
+      console.log("Transaction confirmed as finalized:", signature);
+
+      toast({
+        title: "SOL Payment Successful",
+        description: `Transaction finalized: ${signature}`,
+      });
+
+      // 3. Call backend API to transfer property tokens to the user (direct call to backend port 5000)
+      const backendRes = await fetch(`http://localhost:5000/api/properties/${property.propertyId}/buy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          buyerPublicKey: publicKey.toBase58(),
+          tokensToBuy: tokensToBuy,
+          solanaTxSignature: signature, // Pass the SOL payment transaction signature
+        }),
+      });
+
+      if (!backendRes.ok) {
+        const errorData = await backendRes.json();
+        throw new Error(errorData.message || "Failed to complete token purchase on backend.");
+      }
+
+      const backendData = await backendRes.json();
+      toast({
+        title: "Token Purchase Successful",
+        description: `You have successfully bought ${tokensToBuy} tokens. Transaction ID: ${backendData.transactionId}`,
+      });
+
+      // Optionally, refresh property data or navigate to portfolio
+      // navigate('/portfolio');
+
+    } catch (err) {
+      console.error("Error buying tokens:", err);
+      toast({
+        title: "Token Purchase Failed",
+        description: err.message || "An unexpected error occurred during purchase.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBuying(false);
+    }
+  };
 
   // Mock data for now
   const transactions = []; 
@@ -291,9 +418,24 @@ const PropertyDetail = () => {
 
                   {/* Action Buttons */}
                   <div className="space-y-3">
-                    <Button variant="neon" className="w-full">
-                      Buy Tokens
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        type="number"
+                        placeholder="Tokens"
+                        value={tokensToBuy}
+                        onChange={(e) => setTokensToBuy(Math.max(1, parseInt(e.target.value) || 1))}
+                        min="1"
+                        className="w-full"
+                      />
+                      <Button
+                        variant="neon"
+                        className="w-full"
+                        onClick={handleBuyTokens}
+                        disabled={!connected || isBuying || tokensToBuy <= 0}
+                      >
+                        {isBuying ? "Buying..." : "Buy Tokens"}
+                      </Button>
+                    </div>
                     <Button variant="glass-primary" className="w-full">
                       Add to Watchlist
                     </Button>
