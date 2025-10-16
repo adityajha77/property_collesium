@@ -11,6 +11,8 @@ import Transactions from "./pages/Transactions";
 import NotFound from "./pages/NotFound";
 import SwapPage from "./pages/SwapPage";
 import MarketplacePage from "./pages/MarketplacePage";
+import AuctionPage from "./pages/AuctionPage";
+import StartAuctionPage from "./pages/StartAuctionPage"; // Import StartAuctionPage
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,8 @@ const App = () => (
           <Route path="/create" element={<CreateProperty />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/swap" element={<SwapPage />} />
+          <Route path="/auction" element={<AuctionPage />} /> {/* Route for listing all auctions */}
+          <Route path="/start-auction/:propertyId" element={<StartAuctionPage />} /> {/* New route for StartAuctionPage */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

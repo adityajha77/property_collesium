@@ -6,26 +6,55 @@ import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import Countdown from 'react-countdown'; // Import Countdown component
+import { Badge } from "@/components/ui/badge"; // Import Badge component
+
 // Interface matching the backend Property model
 interface Property {
+  _id?: string; // Optional, as it might be populated from Auction
   propertyId: string;
   title: string;
   location: string;
   description: string;
   priceSOL: number;
   totalTokens: number;
+  propertyType: 'house' | 'apartment' | 'condo' | 'land' | 'commercial' | 'other';
   imageURLs: string[];
-  status: 'pending_verification' | 'tokenized' | 'sold_out' | 'rejected';
+  status: 'pending_verification' | 'verified' | 'tokenized' | 'bidding' | 'sold_out' | 'rejected'; // Updated status enum
   tokenMintAddress: string;
   owner: string;
   createdAt: string;
+  // Optional fields for auction properties
+  auctionId?: string;
+  endTime?: string;
+  currentBidSOL?: number; // For displaying current bid in auction context
 }
 
 interface PropertyGridProps {
   properties?: Property[]; // Make properties prop optional
+  locationFilter?: string;
+  minPriceFilter?: number;
+  maxPriceFilter?: number;
+  minTokensFilter?: number;
+  maxTokensFilter?: number;
+  propertyTypeFilter?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  onStartBidding?: (propertyId: string) => void; // New prop for "Start Bidding" functionality
 }
 
-const PropertyGrid = ({ properties: propProperties }: PropertyGridProps) => {
+const PropertyGrid = ({ 
+  properties: propProperties,
+  onStartBidding, // Destructure the new prop
+  locationFilter,
+  minPriceFilter,
+  maxPriceFilter,
+  minTokensFilter,
+  maxTokensFilter,
+  propertyTypeFilter,
+  sortBy,
+  sortOrder,
+}: PropertyGridProps) => {
   const [internalProperties, setInternalProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +69,25 @@ const PropertyGrid = ({ properties: propProperties }: PropertyGridProps) => {
     }
 
     const fetchProperties = async () => {
+      setLoading(true); // Set loading to true before fetching
+      setError(null); // Clear previous errors
+
+      const params = new URLSearchParams();
+      if (locationFilter) params.append("location", locationFilter);
+      if (minPriceFilter !== undefined && minPriceFilter > 0) params.append("minPrice", minPriceFilter.toString());
+      if (maxPriceFilter !== undefined && maxPriceFilter < 1000) params.append("maxPrice", maxPriceFilter.toString()); // Assuming 1000 is max default
+      if (minTokensFilter !== undefined && minTokensFilter > 0) params.append("minTokens", minTokensFilter.toString());
+      if (maxTokensFilter !== undefined && maxTokensFilter < 10000) params.append("maxTokens", maxTokensFilter.toString()); // Assuming 10000 is max default
+      if (propertyTypeFilter) params.append("propertyType", propertyTypeFilter);
+      if (sortBy) params.append("sortBy", sortBy);
+      if (sortOrder) params.append("sortOrder", sortOrder);
+
+      const queryString = params.toString();
+      const url = `http://localhost:5000/api/properties${queryString ? `?${queryString}` : ""}`;
+      console.log("Fetching properties from URL:", url); // Debugging log
+
       try {
-        const response = await fetch("http://localhost:5000/api/properties");
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error("Failed to fetch properties");
         }
@@ -55,7 +101,17 @@ const PropertyGrid = ({ properties: propProperties }: PropertyGridProps) => {
     };
 
     fetchProperties();
-  }, [propProperties]);
+  }, [
+    propProperties,
+    locationFilter,
+    minPriceFilter,
+    maxPriceFilter,
+    minTokensFilter,
+    maxTokensFilter,
+    propertyTypeFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   const toggleFavorite = (propertyId: string) => {
     setFavorites(prev => 
@@ -116,23 +172,6 @@ const PropertyGrid = ({ properties: propProperties }: PropertyGridProps) => {
   return (
     <section id="marketplace" className="py-20 px-4">
       <div className="max-w-7xl mx-auto">
-        {!propProperties && ( // Only show marketplace header if not used as a prop
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-6xl font-bold gradient-text mb-6">
-              Property Marketplace
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-              Discover premium tokenized real estate from around the world. 
-              Buy fractional ownership and start earning today.
-            </p>
-          </motion.div>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {propertiesToRender.map((property, index) => (
             <motion.div
@@ -179,10 +218,30 @@ const PropertyGrid = ({ properties: propProperties }: PropertyGridProps) => {
                     ⏳ Under Verification
                   </div>
                 )}
+                {property.status === 'verified' && (
+                  <Badge variant="secondary" className="absolute top-4 left-4 px-2 py-1 bg-green-500/90 backdrop-blur-sm text-xs font-medium text-white">
+                    ✓ Verified
+                  </Badge>
+                )}
+                {property.status === 'tokenized' && (
+                  <Badge variant="secondary" className="absolute top-4 left-4 px-2 py-1 bg-secondary/90 backdrop-blur-sm text-xs font-medium text-secondary-foreground">
+                    ✓ Tokenized
+                  </Badge>
+                )}
+                {property.status === 'pending_verification' && (
+                  <Badge variant="outline" className="absolute top-4 left-4 px-2 py-1 bg-primary/90 backdrop-blur-sm text-xs font-medium text-primary-foreground">
+                    ⏳ Under Verification
+                  </Badge>
+                )}
                 {property.status === 'rejected' && (
-                  <div className="absolute top-4 left-4 px-2 py-1 bg-destructive/90 backdrop-blur-sm rounded-full text-xs font-medium text-destructive-foreground">
+                  <Badge variant="destructive" className="absolute top-4 left-4 px-2 py-1 bg-destructive/90 backdrop-blur-sm text-xs font-medium text-destructive-foreground">
                     ❌ Rejected
-                  </div>
+                  </Badge>
+                )}
+                {property.status === 'bidding' && (
+                  <Badge variant="default" className="absolute top-4 left-4 px-2 py-1 bg-yellow-500/90 backdrop-blur-sm text-xs font-medium text-yellow-foreground">
+                    ⚡ Live Auction
+                  </Badge>
                 )}
               </div>
 
@@ -198,21 +257,37 @@ const PropertyGrid = ({ properties: propProperties }: PropertyGridProps) => {
                   </div>
                 </div>
 
-                {/* Price and ROI */}
+                {/* Price / Current Bid and ROI */}
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-secondary">
-                      {property.priceSOL} SOL
+                      {property.status === 'bidding' ? `${property.currentBidSOL || property.priceSOL} SOL` : `${property.priceSOL} SOL`}
                     </div>
-                    <div className="text-sm text-muted-foreground">Total Value</div>
+                    <div className="text-sm text-muted-foreground">
+                      {property.status === 'bidding' ? 'Current Bid' : 'Total Value'}
+                    </div>
                   </div>
                   <div className="text-right">
-                    <div className="flex items-center text-accent font-semibold">
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                      {/* ROI needs to be calculated or stored */}
-                      10% ROI
+                    {property.status === 'bidding' && property.endTime ? (
+                      <div className="text-accent font-semibold">
+                        <Countdown date={new Date(property.endTime)} renderer={({ hours, minutes, seconds, completed }) => {
+                          if (completed) {
+                            return <span>Auction Ended!</span>;
+                          } else {
+                            return <span>{hours}h {minutes}m {seconds}s left</span>;
+                          }
+                        }} />
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-accent font-semibold">
+                        <TrendingUp className="w-4 h-4 mr-1" />
+                        {/* ROI needs to be calculated or stored */}
+                        10% ROI
+                      </div>
+                    )}
+                    <div className="text-sm text-muted-foreground">
+                      {property.status === 'bidding' ? 'Time Remaining' : 'Est. Annual'}
                     </div>
-                    <div className="text-sm text-muted-foreground">Est. Annual</div>
                   </div>
                 </div>
 
@@ -240,14 +315,34 @@ const PropertyGrid = ({ properties: propProperties }: PropertyGridProps) => {
                     <Eye className="w-4 h-4" />
                     <span>View</span>
                   </Button>
-                  <Button 
-                    variant="neon-secondary" 
-                    className="flex-1 flex items-center justify-center space-x-2"
-                    disabled={property.status !== 'tokenized'}
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    <span>Buy Tokens</span>
-                  </Button>
+                  {property.status === 'bidding' ? (
+                    <Button 
+                      variant="neon-secondary" 
+                      className="flex-1 flex items-center justify-center space-x-2"
+                      onClick={() => navigate(`/auction/${property.auctionId}`)} // Navigate to auction page
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      <span>Place Bid</span>
+                    </Button>
+                  ) : onStartBidding && (property.status === 'verified' || property.status === 'tokenized') ? (
+                    <Button 
+                      variant="neon-secondary" 
+                      className="flex-1 flex items-center justify-center space-x-2"
+                      onClick={() => onStartBidding(property.propertyId)}
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Start Bidding</span>
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="neon-secondary" 
+                      className="flex-1 flex items-center justify-center space-x-2"
+                      disabled={property.status !== 'tokenized'}
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      <span>Buy Tokens</span>
+                    </Button>
+                  )}
                 </div>
               </div>
             </motion.div>

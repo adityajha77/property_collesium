@@ -49,22 +49,30 @@ interface Property {
 }
 
 const Transactions = () => {
-  const { publicKey } = useWallet();
+  const { publicKey, connecting } = useWallet(); // Destructure 'connecting' state
   const [transactions, setTransactions] = useState<EnrichedTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTransactions = async () => {
-      if (!publicKey) {
+      // If not connected and not currently connecting, show error
+      if (!publicKey && !connecting) {
         setError("Please connect your wallet to view transactions.");
         setLoading(false);
+        return;
+      }
+      // If connecting, set loading and wait
+      if (connecting) {
+        setLoading(true);
+        setError(null); // Clear any previous error
         return;
       }
 
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/properties/transactions/buyer/${publicKey.toBase58()}`);
+        setError(null); // Clear any previous error
+        const response = await fetch(`http://localhost:5000/api/properties/transactions/user/${publicKey!.toBase58()}`); // publicKey is guaranteed to be not null here
         if (!response.ok) {
           throw new Error("Failed to fetch transactions");
         }
@@ -131,7 +139,7 @@ const Transactions = () => {
     };
 
     fetchTransactions();
-  }, [publicKey]);
+  }, [publicKey, connecting]);
 
   const formatDate = (timestamp: string) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -166,7 +174,7 @@ const Transactions = () => {
 
   const netProfit = totalSold - totalBought;
 
-  if (loading) {
+  if (loading || connecting) { // Also show loading if wallet is connecting
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
@@ -342,7 +350,7 @@ const Transactions = () => {
                         </div>
                         <p className="text-sm text-muted-foreground mb-1">{transaction.location}</p>
                         <p className="text-xs text-muted-foreground font-mono">
-                          {transaction.hash.slice(0, 8)}...{transaction.hash.slice(-8)}
+                          {transaction.hash ? `${transaction.hash.slice(0, 8)}...${transaction.hash.slice(-8)}` : 'N/A'}
                         </p>
                       </div>
                     </div>

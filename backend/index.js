@@ -1,6 +1,8 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../backend/.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
+const http = require('http'); // Import http module
+const { Server } = require('socket.io'); // Import Server from socket.io
 const mongoose = require('mongoose');
 const cors = require('cors');
 const solanaUtils = require('./utils/solana'); // Import all exports as solanaUtils
@@ -31,15 +33,35 @@ const backendWalletPublicKey = solanaUtils.initializeSolana(solanaRpcUrl, backen
 console.log("Backend Wallet Public Key for Frontend:", backendWalletPublicKey.toBase58()); // Log for frontend use
 
 const app = express();
+const server = http.createServer(app); // Create HTTP server
+const io = new Server(server, { // Initialize socket.io
+    cors: {
+        origin: '*', // Allow all origins for WebSocket
+        methods: ['GET', 'POST'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+    }
+});
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-    origin: '*', // Allow all origins
+    origin: '*', // Allow all origins for HTTP requests
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow all methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
 }));
 app.use(express.json());
+
+// Make io accessible to routes
+app.set('socketio', io);
+app.set('connection', solanaUtils.getConnection()); // Also make solana connection accessible if needed
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+    console.log('A user connected via WebSocket');
+    socket.on('disconnect', () => {
+        console.log('User disconnected from WebSocket');
+    });
+});
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
@@ -69,6 +91,7 @@ app.get('/api/properties/backend-wallet-public-key', (req, res) => {
 });
 
 app.use('/api/properties', require('./routes/propertyRoutes')(solanaUtils)); // Pass solanaUtils to the router
+app.use('/api/auctions', require('./routes/auctionRoutes')(solanaUtils, io)); // Pass solanaUtils AND io to the auction router
 app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Basic route
@@ -76,7 +99,7 @@ app.get('/', (req, res) => {
     res.send('Terra Pulse Vault Backend API');
 });
 
-// Start the server
-app.listen(PORT, () => {
+// Start the server using the http server, not the express app
+server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

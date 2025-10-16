@@ -17,6 +17,8 @@ const Navbar = () => {
     { name: "Portfolio", href: "/portfolio" },
     { name: "Create", href: "/create" },
     { name: "Transactions", href: "/transactions" },
+    { name: "Live Auctions", href: "/auction" }, // Renamed "BID" to "Live Auctions" for clarity
+    { name: "My Auctions", href: "/my-auctions" }, // New "My Auctions" tab
   ];
 
   return (

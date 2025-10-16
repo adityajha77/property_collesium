@@ -13,14 +13,16 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js'; // Import LAMPORTS_PER_SOL
 
 // Interface matching the backend Property model
 interface Property {
+  _id: string; // Add _id for MongoDB
   propertyId: string;
   title: string;
   location: string;
   description: string;
   priceSOL: number;
   totalTokens: number;
+  propertyType: 'house' | 'apartment' | 'condo' | 'land' | 'commercial' | 'other';
   imageURLs: string[];
-  status: 'pending_verification' | 'tokenized' | 'sold_out' | 'rejected';
+  status: 'pending_verification' | 'verified' | 'tokenized' | 'bidding' | 'sold_out' | 'rejected'; // Updated status enum
   tokenMintAddress: string;
   owner: string;
   createdAt: string;
@@ -47,31 +49,37 @@ interface RawTransaction {
 const Portfolio = () => {
   const navigate = useNavigate();
   const { connection } = useConnection(); // Get Solana connection
-  const { publicKey } = useWallet(); // Get connected wallet's public key
+  const { publicKey, connected, connecting } = useWallet(); // Get connected wallet's public key and connection status
   const [userProperties, setUserProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [availableTokenBalance, setAvailableTokenBalance] = useState<number>(0);
   const [rentalIncome, setRentalIncome] = useState<{ monthly: number; total: number }>({ monthly: 0, total: 0 });
 
-  // Use the connected wallet's public key, or a placeholder if not connected
-  const currentUserWalletAddress = publicKey ? publicKey.toBase58() : "YOUR_WALLET_ADDRESS_HERE";
-
   useEffect(() => {
     const fetchUserProperties = async () => {
-      if (!currentUserWalletAddress || currentUserWalletAddress === "YOUR_WALLET_ADDRESS_HERE") {
+      // If still connecting, do nothing and keep loading state
+      if (connecting) {
+        setLoading(true);
+        return;
+      }
+
+      // If not connected after attempting, show error
+      if (!connected || !publicKey) {
         setError("Please connect your wallet to view your portfolio.");
         setLoading(false);
         return;
       }
 
+      // If connected, proceed to fetch properties
       try {
-        const response = await fetch(`http://localhost:5000/api/properties/owner/${currentUserWalletAddress}`);
+        const response = await fetch(`http://localhost:5000/api/properties/owner/${publicKey.toBase58()}`);
         if (!response.ok) {
           throw new Error("Failed to fetch user properties");
         }
         const data: Property[] = await response.json();
         setUserProperties(data);
+        setError(null); // Clear any previous errors
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -79,8 +87,9 @@ const Portfolio = () => {
       }
     };
 
+    setLoading(true); // Set loading to true at the start of the effect
     fetchUserProperties();
-  }, [currentUserWalletAddress]);
+  }, [publicKey, connected, connecting]); // Depend on publicKey, connected, and connecting
 
   // Calculate portfolio stats based on fetched properties
   const portfolioStats = userProperties.reduce(
@@ -280,7 +289,10 @@ const Portfolio = () => {
               </div>
 
               {userProperties.length > 0 ? (
-                <PropertyGrid properties={userProperties} />
+                <PropertyGrid 
+                  properties={userProperties} 
+                  onStartBidding={(propertyId) => navigate(`/start-auction/${propertyId}`)} // Pass the handler
+                />
               ) : (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground text-lg">You don't have any properties yet.</p>

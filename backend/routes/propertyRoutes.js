@@ -83,7 +83,46 @@ router.post('/', upload.array('images', 10), async (req, res) => { // 'images' i
 // @access  Public
 router.get('/', async (req, res) => {
     try {
-        const properties = await Property.find({ status: 'tokenized' }); // Only show tokenized properties for the general marketplace
+        const {
+            location,
+            minPrice,
+            maxPrice,
+            minTokens,
+            maxTokens,
+            propertyType,
+            sortBy = 'createdAt', // Default sort by creation date
+            sortOrder = 'desc'    // Default sort order descending
+        } = req.query;
+
+        let query = { status: 'tokenized' }; // Only show tokenized properties for the general marketplace
+
+        // Filtering
+        if (location) {
+            query.location = { $regex: location, $options: 'i' }; // Case-insensitive search
+        }
+        if (minPrice) {
+            query.priceSOL = { ...query.priceSOL, $gte: parseFloat(minPrice) };
+        }
+        if (maxPrice) {
+            query.priceSOL = { ...query.priceSOL, $lte: parseFloat(maxPrice) };
+        }
+        if (minTokens) {
+            query.totalTokens = { ...query.totalTokens, $gte: parseInt(minTokens) };
+        }
+        if (maxTokens) {
+            query.totalTokens = { ...query.totalTokens, $lte: parseInt(maxTokens) };
+        }
+        if (propertyType && propertyType !== 'all') { // Only apply filter if propertyType is not 'all'
+            query.propertyType = propertyType;
+        }
+
+        // Sorting
+        const sortOptions = {};
+        if (sortBy) {
+            sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+        }
+
+        const properties = await Property.find(query).sort(sortOptions);
         res.json(properties);
     } catch (err) {
         console.error(err.message);
@@ -132,6 +171,38 @@ router.get('/:id', async (req, res) => {
     } catch (err) {
         console.error(err.message);
         if (err.kind === 'ObjectId') { // For invalid MongoDB ObjectId format
+            return res.status(400).json({ msg: 'Invalid Property ID format' });
+        }
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT /api/properties/:id/status
+// @desc    Update property status (e.g., for admin verification)
+// @access  Private (Admin only)
+router.put('/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body; // Expected status: 'verified', 'tokenized', 'rejected'
+
+        // Basic validation for allowed statuses
+        const allowedStatuses = ['verified', 'tokenized', 'rejected'];
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({ msg: 'Invalid status provided' });
+        }
+
+        const property = await Property.findOne({ propertyId: req.params.id });
+
+        if (!property) {
+            return res.status(404).json({ msg: 'Property not found' });
+        }
+
+        property.status = status;
+        await property.save();
+
+        res.json(property);
+    } catch (err) {
+        console.error(err.message);
+        if (err.kind === 'ObjectId') {
             return res.status(400).json({ msg: 'Invalid Property ID format' });
         }
         res.status(500).send('Server Error');
@@ -310,6 +381,24 @@ router.get('/transactions/buyer/:buyerPublicKey', async (req, res) => {
         res.json(transactions);
     } catch (err) {
         console.error("Error fetching buyer transactions:", err.message);
+        res.status(500).json({ message: 'Server Error fetching transactions', error: err.message });
+    }
+});
+
+// @route   GET /api/properties/transactions/user/:userPublicKey
+// @desc    Get all transactions for a specific user (as buyer or seller)
+// @access  Public (will add authentication later)
+router.get('/transactions/user/:userPublicKey', async (req, res) => {
+    try {
+        const userPublicKey = req.params.userPublicKey;
+        console.log(`Fetching transactions for user: ${userPublicKey}`);
+        const transactions = await Transaction.find({
+            $or: [{ buyer: userPublicKey }, { seller: userPublicKey }]
+        }).sort({ createdAt: -1 });
+        console.log(`Found ${transactions.length} transactions for user ${userPublicKey}`);
+        res.json(transactions);
+    } catch (err) {
+        console.error("Error fetching user transactions:", err.message);
         res.status(500).json({ message: 'Server Error fetching transactions', error: err.message });
     }
 });

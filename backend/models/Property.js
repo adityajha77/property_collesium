@@ -22,6 +22,12 @@ const PropertySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    propertyType: {
+        type: String,
+        enum: ['house', 'apartment', 'condo', 'land', 'commercial', 'other'], // Example types
+        required: true,
+        default: 'house' // Default value
+    },
     priceSOL: {
         type: Number,
         required: true,
@@ -51,7 +57,7 @@ const PropertySchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending_verification', 'tokenized', 'sold_out', 'rejected'],
+        enum: ['pending_verification', 'verified', 'tokenized', 'bidding', 'sold_out', 'rejected'],
         default: 'pending_verification'
     },
     createdAt: {
