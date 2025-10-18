@@ -9,7 +9,7 @@ import Portfolio from "./pages/Portfolio";
 import CreateProperty from "./pages/CreateProperty";
 import Transactions from "./pages/Transactions";
 import NotFound from "./pages/NotFound";
-import SwapPage from "./pages/SwapPage";
+import LiquidityPoolPage from "./pages/LiquidityPoolPage";
 import MarketplacePage from "./pages/MarketplacePage";
 import AuctionPage from "./pages/AuctionPage";
 import StartAuctionPage from "./pages/StartAuctionPage"; // Import StartAuctionPage
@@ -29,7 +29,7 @@ const App = () => (
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/create" element={<CreateProperty />} />
           <Route path="/transactions" element={<Transactions />} />
-          <Route path="/swap" element={<SwapPage />} />
+          <Route path="/liquidity-pool" element={<LiquidityPoolPage />} />
           <Route path="/auction" element={<AuctionPage />} /> {/* Route for listing all auctions */}
           <Route path="/start-auction/:propertyId" element={<StartAuctionPage />} /> {/* New route for StartAuctionPage */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -13,7 +13,7 @@ const Navbar = () => {
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Marketplace", href: "/marketplace" },
-    { name: "Swap", href: "/swap" },
+    { name: "Liquidity Pool", href: "/liquidity-pool" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Create", href: "/create" },
     { name: "Transactions", href: "/transactions" },
