@@ -83,10 +83,6 @@ const LiquidityPoolPage: React.FC = () => {
     fetchPoolData();
   };
 
-  if (loading) {
-    return <div className="container mx-auto p-6">Loading Liquidity Pool Data...</div>;
-  }
-
   if (!publicKey) {
     return (
       <div className="container mx-auto p-6 text-center relative">
@@ -96,6 +92,10 @@ const LiquidityPoolPage: React.FC = () => {
         <WalletMultiButton />
       </div>
     );
+  }
+
+  if (loading) {
+    return <div className="container mx-auto p-6">Loading Liquidity Pool Data...</div>;
   }
 
   // Calculate derived values for display, converting BN to number
