@@ -13,7 +13,7 @@ const uploadFileToIPFS = async (filePath) => {
             headers: {
                 'Content-Type': `multipart/form-data; boundary=${data._boundary}`,
                 'pinata_api_key': process.env.PINATA_API_KEY,
-                'pinata_secret_api_key': process.env.PINATA_SECRET_API_KEY
+                'pinata_secret_api_key': process.env.PINATA_API_SECRET
             }
         });
         return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
@@ -28,7 +28,7 @@ const uploadJSONToIPFS = async (jsonContent) => {
         const res = await axios.post("https://api.pinata.cloud/pinning/pinJSONToIPFS", jsonContent, {
             headers: {
                 'pinata_api_key': process.env.PINATA_API_KEY,
-                'pinata_secret_api_key': process.env.PINATA_SECRET_API_KEY
+                'pinata_secret_api_key': process.env.PINATA_API_SECRET
             }
         });
         return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;

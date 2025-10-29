@@ -1,3 +1,4 @@
+const bs58 = require("bs58");
 const {
     Connection,
     Keypair,
@@ -31,7 +32,7 @@ let backendSigner;
 const initializeSolana = (solanaRpcUrl, backendWalletSecretKey) => {
     connection = new Connection(solanaRpcUrl, 'finalized');
 
-    const secretKey = Uint8Array.from(JSON.parse(backendWalletSecretKey));
+    const secretKey = bs58.default.decode(backendWalletSecretKey);
     backendWallet = Keypair.fromSecretKey(secretKey);
 
     umi = createUmi(solanaRpcUrl);
