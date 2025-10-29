@@ -9,6 +9,7 @@ import {
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { ThemeProvider } from './components/theme-provider.tsx';
+import { Analytics } from "@vercel/analytics/react";
 
 // Default styles that can be overridden by your app
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -30,6 +31,7 @@ createRoot(document.getElementById("root")!).render(
           </WalletModalProvider>
         </WalletProvider>
       </ConnectionProvider>
+      <Analytics />
     </ThemeProvider>
   </React.StrictMode>
 );
