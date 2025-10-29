@@ -262,7 +262,7 @@ const PropertyGrid = ({
                 {/* Price / Current Bid and ROI */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-secondary">
+                    <div className="text-2xl font-bold text-foreground">
                       {property.status === 'bidding' ? `${property.currentBidSOL || property.priceSOL} SOL` : `${property.priceSOL} SOL`}
                     </div>
                     <div className="text-sm text-muted-foreground">
