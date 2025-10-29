@@ -45,9 +45,7 @@ const Navbar = () => {
               whileHover={{ scale: 1.05 }}
               className="flex items-center space-x-2"
             >
-              <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">T</span>
-              </div>
+              <img src="/logos/logo.png" alt="TokenEstate Logo" className="h-8 w-auto" />
               <span className="text-xl font-bold gradient-text">TokenEstate</span>
             </motion.div>
 
