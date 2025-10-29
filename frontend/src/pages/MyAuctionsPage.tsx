@@ -47,7 +47,7 @@ const MyAuctionsPage: React.FC = () => {
   const { publicKey } = useWallet();
   const { toast } = useToast();
 
-  const socket = useMemo(() => io('http://localhost:5000'), []);
+  const socket = useMemo(() => io('https://tokenestate.onrender.com'), []);
 
   const fetchMyAuctions = useCallback(async () => {
     if (!publicKey) {

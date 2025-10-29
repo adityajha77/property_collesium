@@ -73,7 +73,7 @@ const Transactions = () => {
       try {
         setLoading(true);
         setError(null); // Clear any previous error
-        const response = await fetch(`http://localhost:5000/api/properties/transactions/user/${publicKey!.toBase58()}`); // publicKey is guaranteed to be not null here
+        const response = await fetch(`https://tokenestate.onrender.com/api/properties/transactions/user/${publicKey!.toBase58()}`); // publicKey is guaranteed to be not null here
         if (!response.ok) {
           throw new Error("Failed to fetch transactions");
         }
@@ -83,7 +83,7 @@ const Transactions = () => {
         const enrichedTxs = await Promise.all(
           rawTxs.map(async (tx) => {
             try {
-              const propResponse = await fetch(`http://localhost:5000/api/properties/${tx.propertyId}`);
+              const propResponse = await fetch(`https://tokenestate.onrender.com/api/properties/${tx.propertyId}`);
               let property: Property;
               if (propResponse.ok) {
                 property = await propResponse.json();

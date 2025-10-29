@@ -52,7 +52,7 @@ const AuctionDetailPage = () => {
   const { publicKey, sendTransaction } = useWallet();
   const { toast } = useToast();
 
-  const socket = useMemo(() => io('http://localhost:5000'), []);
+  const socket = useMemo(() => io('https://tokenestate.onrender.com'), []);
 
   const fetchAuction = useCallback(async () => {
     if (!auctionId) return;

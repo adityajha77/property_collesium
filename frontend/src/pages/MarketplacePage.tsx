@@ -60,7 +60,7 @@ interface Auction {
   updatedAt: string;
 }
 
-const socket = io('http://localhost:5000'); // Connect to your backend socket.io server
+const socket = io('https://tokenestate.onrender.com'); // Connect to your backend socket.io server
 
 const MarketplacePage = () => {
   const [activeTab, setActiveTab] = useState("verified"); // State for active tab
@@ -98,7 +98,7 @@ const MarketplacePage = () => {
     setLoading(true);
     setError(null);
     try {
-      let url = "http://localhost:5000/api/properties?";
+      let url = "https://tokenestate.onrender.com/api/properties?";
       const params = new URLSearchParams();
 
       if (status) {
@@ -134,7 +134,7 @@ const MarketplacePage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:5000/api/auctions");
+      const response = await fetch("https://tokenestate.onrender.com/api/auctions");
       if (!response.ok) {
         throw new Error("Failed to fetch live auctions");
       }

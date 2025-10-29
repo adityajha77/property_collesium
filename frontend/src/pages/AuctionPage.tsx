@@ -53,7 +53,7 @@ const AuctionPage = () => {
   const { toast } = useToast();
 
   // ✅ Memoize socket connection so it doesn’t reconnect on every re-render
-  const socket = useMemo(() => io('http://localhost:5000'), []);
+  const socket = useMemo(() => io('https://tokenestate.onrender.com'), []);
 
   // ✅ Use useCallback to prevent re-creation of fetchAuctions function
   const fetchAuctions = useCallback(async () => {

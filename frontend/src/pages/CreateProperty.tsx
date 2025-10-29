@@ -77,7 +77,7 @@ const CreateProperty = () => {
     });
 
     try {
-      const response = await fetch("http://localhost:5000/api/properties", {
+      const response = await fetch("https://tokenestate.onrender.com/api/properties", {
         method: "POST",
         body: data, // No headers needed, browser sets it for FormData
       });

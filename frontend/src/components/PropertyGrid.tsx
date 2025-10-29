@@ -85,7 +85,7 @@ const PropertyGrid = ({
       if (sortOrder) params.append("sortOrder", sortOrder);
 
       const queryString = params.toString();
-      const url = `http://localhost:5000/api/properties${queryString ? `?${queryString}` : ""}`;
+      const url = `https://tokenestate.onrender.com/api/properties${queryString ? `?${queryString}` : ""}`;
       console.log("Fetching properties from URL:", url); // Debugging log
 
       try {
