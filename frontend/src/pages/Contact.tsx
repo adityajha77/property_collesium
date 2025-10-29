@@ -42,7 +42,7 @@ const Contact = () => {
     {
       icon: <Phone className="h-6 w-6" />,
       title: 'Phone',
-      details: ['7542889584', '9606364155'], // Updated phone number
+      details: ['7542889584'], // Updated phone number
       description: 'Call us for immediate assistance'
     },
     {
