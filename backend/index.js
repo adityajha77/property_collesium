@@ -92,7 +92,7 @@ app.get('/api/properties/backend-wallet-public-key', (req, res) => {
 
 app.use('/api/properties', require('./routes/propertyRoutes')(solanaUtils)); // Pass solanaUtils to the router
 app.use('/api/auctions', require('./routes/auctionRoutes')(solanaUtils, io)); // Pass solanaUtils AND io to the auction router
-app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes')(io)); // Pass io to the admin router
 
 // Basic route
 app.get('/', (req, res) => {

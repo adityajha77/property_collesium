@@ -112,6 +112,22 @@ module.exports = (solanaUtils, io) => { // Accept io as an argument
         }
     });
 
+    // @route   GET /api/auctions/my-auctions/:sellerPublicKey
+    // @desc    Get all auctions created by a specific seller
+    // @access  Public (or Private if authentication is added)
+    router.get('/my-auctions/:sellerPublicKey', async (req, res) => {
+        try {
+            const { sellerPublicKey } = req.params;
+            const myAuctions = await Auction.find({ seller: sellerPublicKey })
+                                            .populate('propertyId')
+                                            .sort({ startTime: -1 }); // Sort by most recent first
+            res.json(myAuctions);
+        } catch (err) {
+            console.error("Error fetching my auctions:", err.message);
+            res.status(500).send('Server Error');
+        }
+    });
+
     // @route   GET /api/auctions/:id
     // @desc    Get details of a specific auction
     // @access  Public
@@ -244,9 +260,9 @@ module.exports = (solanaUtils, io) => { // Accept io as an argument
                 return res.status(400).json({ message: 'Auction has already ended' });
             }
 
-            // 1. End auction on Solana Smart Contract
+            // 1. End auction on Solana Smart Contract (now passing the full auction object)
             const { finalStatus, winner, finalPrice, txSignature: endTxSignature } = await endAuctionOnChain(
-                auction.auctionAccountPublicKey
+                auction // Pass the entire auction object
             );
 
             // 2. Update auction status in database based on smart contract outcome

@@ -1,1 +1,0 @@
-/mnt/c/Users/asus/Documents/property_collesium/solana-program/auction/target/sbpf-solana-solana/release/libauction.rlib: /mnt/c/Users/asus/Documents/property_collesium/solana-program/auction/src/lib.rs

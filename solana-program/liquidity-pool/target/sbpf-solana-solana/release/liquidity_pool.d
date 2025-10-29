@@ -1,1 +1,0 @@
-/mnt/c/Users/asus/Documents/property_collesium/solana-program/liquidity-pool/target/sbpf-solana-solana/release/liquidity_pool.so: /mnt/c/Users/asus/Documents/property_collesium/solana-program/liquidity-pool/src/lib.rs

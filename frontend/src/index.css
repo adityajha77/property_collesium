@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Syne:wght@400..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --font-sans: "Syne", sans-serif;
+    --font-mono: "Space Grotesk", monospace;
+
+    /* Light theme - Clean and modern */
+    --background: 0 0% 100%; /* Pure white */
+    --foreground: 0 0% 0%; /* Pure black */
+
+    --card: 0 0% 100%; /* Pure white */
+    --card-foreground: 240 10% 3.9%;
+    --card-glass: 0 0% 98%; /* Slightly off-white for glass effect */
+
+    --popover: 0 0% 100%; /* Pure white */
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 210 90% 45%; /* Professional blue */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 210 90% 55%;
+
+    --secondary: 220 13% 95%; /* Very light grey-blue */
+    --secondary-foreground: 0 0% 0%; /* Pure black */
+    --secondary-glow: 220 13% 85%;
+
+    --muted: 220 13% 95%; /* Same as secondary for muted elements */
+    --muted-foreground: 0 0% 0%; /* Pure black */
+
+    --accent: 34.9 98.6% 50%; /* Vibrant orange */
+    --accent-foreground: 240 10% 3.9%;
+    --accent-glow: 34.9 98.6% 60%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 90%; /* Lighter border */
+    --input: 220 13% 90%; /* Lighter input border */
+    --ring: 210 90% 45%; /* Same as primary for ring */
+
+    --radius: 0.75rem;
+
+    /* Custom gradients for light mode */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-glow)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    --gradient-rainbow: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--secondary)));
+    --gradient-background: radial-gradient(ellipse at top, hsl(210 90% 90% / 0.3), transparent 50%),
+                           radial-gradient(ellipse at bottom left, hsl(220 13% 98% / 0.2), transparent 50%),
+                           radial-gradient(ellipse at bottom right, hsl(34.9 98.6% 98% / 0.2), transparent 50%);
+
+    /* Glass effects for light mode */
+    --glass-bg: hsl(var(--card-glass) / 0.5);
+    --glass-border: hsl(var(--border) / 0.5);
+    --glass-shadow: 0 8px 32px 0 hsl(var(--primary) / 0.1);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    /* Dark theme - Inspired by Codedex and Tensor */
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+    
+    --card: 224 71% 8%;
+    --card-foreground: 210 40% 98%;
+    --card-glass: 224 71% 10%; /* Adjusted */
+
+    --popover: 224 71% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 170 90% 55%; /* More vibrant teal */
+    --primary-foreground: 224 71% 4%;
+    --primary-glow: 170 90% 65%;
+
+    --secondary: 270 90% 65%; /* Richer purple */
+    --secondary-foreground: 210 40% 98%;
+    --secondary-glow: 270 90% 75%;
+
+    --muted: 224 71% 12%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 320 90% 60%; /* More striking pink */
+    --accent-foreground: 210 40% 98%;
+    --accent-glow: 320 90% 70%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 224 71% 18%;
+    --input: 224 71% 12%;
+    --ring: 170 90% 55%;
+
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-glow)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    --gradient-rainbow: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)));
+    --gradient-background: radial-gradient(ellipse at top, hsl(173 97% 20% / 0.3), transparent 50%), 
+                           radial-gradient(ellipse at bottom left, hsl(280 100% 30% / 0.2), transparent 50%),
+                           radial-gradient(ellipse at bottom right, hsl(330 100% 30% / 0.2), transparent 50%);
+
+    /* Glass effects */
+    --glass-bg: hsl(var(--card-glass) / 0.1);
+    --glass-border: hsl(var(--border) / 0.2);
+    --glass-shadow: 0 8px 32px 0 hsl(var(--primary) / 0.1);
+  }
+
+  .purple {
+    --background: 270 90% 98%;
+    --foreground: 270 90% 10%;
+    --card: 270 90% 95%;
+    --card-foreground: 270 90% 10%;
+    --popover: 270 90% 95%;
+    --popover-foreground: 270 90% 10%;
+    --primary: 270 80% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 270 90% 90%;
+    --secondary-foreground: 270 90% 10%;
+    --muted: 270 90% 90%;
+    --muted-foreground: 270 90% 40%;
+    --accent: 270 80% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 270 90% 85%;
+    --input: 270 90% 85%;
+    --ring: 270 80% 50%;
+  }
+
+  .green {
+    --background: 120 100% 98%;
+    --foreground: 120 100% 10%;
+    --card: 120 100% 95%;
+    --card-foreground: 120 100% 10%;
+    --popover: 120 100% 95%;
+    --popover-foreground: 120 100% 10%;
+    --primary: 120 80% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 120 100% 90%;
+    --secondary-foreground: 120 100% 10%;
+    --muted: 120 100% 90%;
+    --muted-foreground: 120 100% 40%;
+    --accent: 120 80% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 120 100% 85%;
+    --input: 120 100% 85%;
+    --ring: 120 80% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground overflow-x-hidden font-sans;
+    background-image: var(--gradient-background);
+    background-attachment: fixed;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Glassmorphism card */
+  .glass-card {
+    @apply backdrop-blur-xl bg-glass-bg border border-glass-border rounded-2xl;
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Neon glow effects */
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3);
+  }
+
+  .glow-secondary {
+    box-shadow: 0 0 20px hsl(var(--secondary) / 0.5), 0 0 40px hsl(var(--secondary) / 0.3);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.5), 0 0 40px hsl(var(--accent) / 0.3);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: var(--gradient-primary);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .gradient-text-rainbow {
+    background: var(--gradient-rainbow);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Animated background */
+  .parallax-bg {
+    background: var(--gradient-background);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+  }
+
+  /* Cursor glow effect */
+  .cursor-glow {
+    transition: var(--transition-smooth);
+  }
+
+  .cursor-glow:hover {
+    filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.3));
+  }
+
+  /* Enhanced hover animations */
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Progress bar gradient */
+  .progress-gradient {
+    background: var(--gradient-primary);
+  }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.wallet-adapter-button {
+  @apply bg-glass-bg text-foreground shadow-lg transition-all duration-300 ease-in-out;
+  @apply hover:shadow-primary/50 hover:scale-105;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary;
+  @apply px-5 py-2 text-sm font-semibold rounded-lg border border-glass-border; /* Adjusted for glass effect, smaller, and border */
+}

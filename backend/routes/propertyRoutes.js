@@ -143,6 +143,19 @@ router.get('/owner/:ownerAddress', async (req, res) => {
     }
 });
 
+// @route   GET /api/properties/my-properties/:ownerPublicKey
+// @desc    Get all properties for a specific owner, regardless of status (alias for /owner/:ownerAddress)
+// @access  Public (will add authentication later)
+router.get('/my-properties/:ownerPublicKey', async (req, res) => {
+    try {
+        const properties = await Property.find({ owner: req.params.ownerPublicKey });
+        res.json(properties);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 // @route   GET /api/properties/upcoming
 // @desc    Get all properties that are pending verification
 // @access  Public
