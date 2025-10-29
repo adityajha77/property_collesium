@@ -74,7 +74,7 @@ const Portfolio = () => {
 
       // If connected, proceed to fetch properties
       try {
-        const response = await fetch(`https://tokenestate.onrender.com/api/properties/owner/${publicKey.toBase58()}`);
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/owner/${publicKey.toBase58()}`);
         if (!response.ok) {
           throw new Error("Failed to fetch user properties");
         }
@@ -141,12 +141,12 @@ const Portfolio = () => {
     const fetchRecentTransactions = async () => {
       if (publicKey) {
         try {
-          const response = await fetch(`https://tokenestate.onrender.com/api/properties/transactions/buyer/${publicKey.toBase58()}`);
+          const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/transactions/buyer/${publicKey.toBase58()}`);
           if (response.ok) {
             const data = await response.json();
             // Enrich transactions with property titles (optional, for better display)
             const enriched: EnrichedTransaction[] = await Promise.all(data.slice(0, 5).map(async (tx: RawTransaction) => {
-              const propResponse = await fetch(`https://tokenestate.onrender.com/api/properties/${tx.propertyId}`);
+              const propResponse = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/${tx.propertyId}`);
               const propData = propResponse.ok ? await propResponse.json() : { title: `Property ${tx.propertyId}` };
               return {
                 type: tx.transactionType === 'buy' ? 'Buy' : 'Sell',

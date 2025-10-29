@@ -33,7 +33,7 @@ const AdminDashboard = () => {
   const fetchPendingProperties = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/properties?status=pending_verification`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties?status=pending_verification`);
       setPendingProperties(response.data);
     } catch (err) {
       console.error("Error fetching pending properties:", err);
@@ -51,7 +51,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchPendingProperties();
 
-    const socket = io(import.meta.env.VITE_BACKEND_URL as string);
+    const socket = io(import.meta.env.VITE_BACKEND_API_URL as string);
 
     socket.on('connect', () => {
       console.log('Connected to WebSocket server from AdminDashboard');
@@ -73,11 +73,11 @@ const AdminDashboard = () => {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [fetchPendingProperties]);
 
   const handleApprove = async (propertyId: string) => {
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/properties/${propertyId}/approve`);
+      await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/admin/properties/${propertyId}/approve`);
       toast({
         title: "Property Approved",
         description: `Property ${propertyId} has been approved and tokenized.`,
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
 
   const handleReject = async (propertyId: string) => {
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/properties/${propertyId}/reject`);
+      await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/admin/properties/${propertyId}/reject`);
       toast({
         title: "Property Rejected",
         description: `Property ${propertyId} has been rejected.`,

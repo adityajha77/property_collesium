@@ -49,7 +49,7 @@ const StartAuctionPage = () => {
         return;
       }
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/properties/${propertyId}`);
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/${propertyId}`);
         const fetchedProperty: Property = response.data;
 
         if (fetchedProperty.owner !== publicKey?.toBase58()) {
@@ -112,7 +112,7 @@ const StartAuctionPage = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auctions`, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/auctions`, {
         propertyId: property.propertyId,
         seller: publicKey.toBase58(),
         startPriceSOL: startPrice,

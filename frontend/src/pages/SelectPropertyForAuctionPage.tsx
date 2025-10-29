@@ -44,7 +44,7 @@ const SelectPropertyForAuctionPage: React.FC = () => {
     }
     try {
       setLoading(true);
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/properties/owner/${publicKey.toBase58()}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/owner/${publicKey.toBase58()}`);
       if (Array.isArray(response.data)) {
         // Filter properties that are 'verified' or 'tokenized' and not currently in an active auction
         const properties = response.data.filter((p: Property) =>
@@ -53,7 +53,7 @@ const SelectPropertyForAuctionPage: React.FC = () => {
         // Further filter out properties that are already in an active auction
         // This would ideally be done on the backend or by fetching active auctions separately
         // For now, a simple client-side filter (less efficient but works)
-        const activeAuctionsResponse = await axios.get<ActiveAuction[]>(`${import.meta.env.VITE_BACKEND_URL}/api/auctions`);
+        const activeAuctionsResponse = await axios.get<ActiveAuction[]>(`${import.meta.env.VITE_BACKEND_API_URL}/api/auctions`);
         const activeAuctionPropertyIds = new Set(activeAuctionsResponse.data.map((a) => a.propertyId.propertyId));
 
         const finalEligibleProperties = properties.filter(p => !activeAuctionPropertyIds.has(p.propertyId));

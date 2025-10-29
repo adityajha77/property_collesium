@@ -47,7 +47,7 @@ const MyAuctionsPage: React.FC = () => {
   const { publicKey } = useWallet();
   const { toast } = useToast();
 
-  const socket = useMemo(() => io('https://tokenestate.onrender.com'), []);
+  const socket = useMemo(() => io(import.meta.env.VITE_BACKEND_API_URL), []);
 
   const fetchMyAuctions = useCallback(async () => {
     if (!publicKey) {
@@ -57,7 +57,7 @@ const MyAuctionsPage: React.FC = () => {
     }
     try {
       setLoading(true);
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/auctions/my-auctions/${publicKey.toBase58()}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/auctions/my-auctions/${publicKey.toBase58()}`);
       if (Array.isArray(response.data)) {
         setMyAuctions(response.data);
       } else {
@@ -84,7 +84,7 @@ const MyAuctionsPage: React.FC = () => {
       return;
     }
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/properties/my-properties/${publicKey.toBase58()}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/my-properties/${publicKey.toBase58()}`);
       if (Array.isArray(response.data)) {
         setMyProperties(response.data);
       } else {

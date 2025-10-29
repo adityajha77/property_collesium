@@ -52,13 +52,13 @@ const AuctionDetailPage = () => {
   const { publicKey, sendTransaction } = useWallet();
   const { toast } = useToast();
 
-  const socket = useMemo(() => io('https://tokenestate.onrender.com'), []);
+  const socket = useMemo(() => io(import.meta.env.VITE_BACKEND_API_URL), []);
 
   const fetchAuction = useCallback(async () => {
     if (!auctionId) return;
     try {
       setLoading(true);
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/auctions/${auctionId}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/auctions/${auctionId}`);
       setAuction(response.data);
       setBidAmount(response.data.currentBidSOL + 0.01); // Initialize bid amount
     } catch (err) {
@@ -77,7 +77,7 @@ const AuctionDetailPage = () => {
   useEffect(() => {
     const fetchBackendPublicKey = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/properties/backend-wallet-public-key`);
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/backend-wallet-public-key`);
         setBackendWalletPublicKey(new PublicKey(response.data.publicKey));
       } catch (err) {
         console.error('Error fetching backend wallet public key:', err);
@@ -163,7 +163,7 @@ const AuctionDetailPage = () => {
         description: `SOL transfer transaction sent: ${signature}`,
       });
 
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auctions/${auction.auctionId}/bid`, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/auctions/${auction.auctionId}/bid`, {
         bidderPublicKey: publicKey.toBase58(),
         bidAmountSOL: bidAmount,
         solanaTxSignature: signature,

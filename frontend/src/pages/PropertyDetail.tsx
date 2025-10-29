@@ -30,7 +30,7 @@ const PropertyDetail = () => {
     const fetchData = async () => {
       try {
         // Fetch backend wallet public key first (direct call to backend port 5000)
-        const backendWalletRes = await fetch('https://tokenestate.onrender.com/api/properties/backend-wallet-public-key');
+        const backendWalletRes = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/backend-wallet-public-key`);
         if (!backendWalletRes.ok) {
           throw new Error('Failed to fetch backend wallet public key');
         }
@@ -38,7 +38,7 @@ const PropertyDetail = () => {
         setBackendWalletPublicKey(new PublicKey(backendWalletData.publicKey));
 
         // Then fetch property details (direct call to backend port 5000)
-        const propertyRes = await fetch(`https://tokenestate.onrender.com/api/properties/${id}`);
+        const propertyRes = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/${id}`);
         if (!propertyRes.ok) {
           throw new Error('Property not found');
         }
@@ -195,7 +195,7 @@ const PropertyDetail = () => {
       });
 
       // 3. Call backend API to transfer property tokens to the user (direct call to backend port 5000)
-      const backendRes = await fetch(`https://tokenestate.onrender.com/api/properties/${property.propertyId}/buy`, {
+      const backendRes = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/properties/${property.propertyId}/buy`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
